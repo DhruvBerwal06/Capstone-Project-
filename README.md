@@ -20,7 +20,7 @@ match.
   structured search criteria (a search term, genre hints, an optional
   runtime cap), which are then run through the same OMDb search everything
   else uses. The AI never invents movie titles or facts — it only proposes
-  *criteria*; OMDb is always the source of truth for what's shown.
+  _criteria_; OMDb is always the source of truth for what's shown.
 - **Favorites** — save/remove movies per signed-in user.
 - **Accounts** — sign up / log in / log out. **Note:** auth is currently
   implemented with `localStorage`, not a real backend — see
@@ -48,11 +48,11 @@ cp .env.example .env
 
 ## Environment variables
 
-| Variable | Where it's used | Required | Notes |
-|---|---|---|---|
-| `VITE_OMDB_API_KEY` | Client (build-time) | Yes | Free key from https://www.omdbapi.com/apikey.aspx. Baked into the client bundle at build time — this is normal for OMDb's free-tier keys, which are rate-limited per key rather than secret. |
-| `GEMINI_API_KEY` | Server only | No (feature degrades gracefully without it) | From https://aistudio.google.com/app/apikey. **Never** prefix this with `VITE_` — that would expose it to the browser. |
-| `PORT` | Server only | No, defaults to `5000` | Also used by the Vite dev proxy to find the API server. |
+| Variable            | Where it's used     | Required                                    | Notes                                                                                                                                                                                        |
+| ------------------- | ------------------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `VITE_OMDB_API_KEY` | Client (build-time) | Yes                                         | Free key from https://www.omdbapi.com/apikey.aspx. Baked into the client bundle at build time — this is normal for OMDb's free-tier keys, which are rate-limited per key rather than secret. |
+| `GEMINI_API_KEY`    | Server only         | No (feature degrades gracefully without it) | From https://aistudio.google.com/app/apikey. **Never** prefix this with `VITE_` — that would expose it to the browser.                                                                       |
+| `PORT`              | Server only         | No, defaults to `5000`                      | Also used by the Vite dev proxy to find the API server.                                                                                                                                      |
 
 `.env` is git-ignored. `.env.example` documents the shape without real
 values.
@@ -72,14 +72,20 @@ npm run dev:server   # API on http://localhost:5000
 
 Vite proxies `/api/*` requests to the Express server (see
 `vite.config.ts`), so open **http://localhost:3000** and everything works
-together.
-
-To run the production build locally:
+To run locally during development:
 
 ```bash
-npm run build
-npm start             # serves the built client + API on PORT (default 5000)
+npm run dev       # Vite dev server on port 3000
+npm run dev:all   # Vite + Express server (requires .env with GEMINI_API_KEY)
 ```
+
+For production (Vercel):
+
+```bash
+npm run build     # Build client only (outputs to dist/public)
+```
+
+The Express server in `server/index.ts` is for local development only. On Vercel, APIs use serverless functions in `api/`.
 
 ## Basic architecture
 
@@ -109,7 +115,7 @@ Data flow for the AI feature:
 ## Why AI is useful here
 
 Movie search by title only works if you already know what you want.
-Most people describe a *mood* ("something funny," "not too long," "kind of
+Most people describe a _mood_ ("something funny," "not too long," "kind of
 like a heist movie") rather than a title. The AI Movie Finder translates
 that fuzzy description into concrete search parameters OMDb can actually
 use, without hallucinating movies that don't exist — it's a translation
