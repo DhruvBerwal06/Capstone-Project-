@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Heart, Search, LogOut, Film, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,18 @@ export default function Home() {
 
   // View state
   const [view, setView] = useState<"search" | "favorites">("search");
+  const [visibleResultsCount, setVisibleResultsCount] = useState(8);
+
+  const visibleResults = useMemo(
+    () => results.slice(0, visibleResultsCount),
+    [results, visibleResultsCount]
+  );
+
+  const hasMoreResults = results.length > visibleResultsCount;
+
+  useEffect(() => {
+    setVisibleResultsCount(8);
+  }, [query, view]);
 
   // Initialize auth state
   useEffect(() => {
@@ -525,63 +537,85 @@ export default function Home() {
             )}
 
             {/* Results grid */}
-            {results.length > 0 && !searchLoading && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {results.map((movie, index) => (
-                  <Card
-                    key={movie.imdbID}
-                    className="glass-card group cursor-pointer overflow-hidden hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 fade-in-up"
-                    style={{ animationDelay: `${index * 40}ms` }}
-                  >
-                    <div className="relative aspect-[2/3] bg-white/5 overflow-hidden">
-                      {movie.Poster && movie.Poster !== "N/A" ? (
-                        <img
-                          src={movie.Poster}
-                          alt={movie.Title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Film className="w-12 h-12 text-foreground/20" />
-                        </div>
-                      )}
+            {visibleResults.length > 0 && !searchLoading && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {visibleResults.map((movie, index) => (
+                    <Card
+                      key={movie.imdbID}
+                      className="glass-card group cursor-pointer overflow-hidden hover:border-primary/50 transition-all duration-200 hover:shadow-lg hover:shadow-primary/20 fade-in-up"
+                      style={{ animationDelay: `${index * 40}ms` }}
+                    >
+                      <div className="relative aspect-[2/3] bg-white/5 overflow-hidden">
+                        {movie.Poster && movie.Poster !== "N/A" ? (
+                          <img
+                            src={movie.Poster}
+                            alt={movie.Title}
+                            loading="lazy"
+                            decoding="async"
+                            width={300}
+                            height={450}
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Film className="w-12 h-12 text-foreground/20" />
+                          </div>
+                        )}
 
-                      <button
-                        onClick={() => toggleFavorite(movie)}
-                        aria-label={
-                          favoriteIds.has(movie.imdbID)
-                            ? `Remove ${movie.Title} from favorites`
-                            : `Add ${movie.Title} to favorites`
-                        }
-                        aria-pressed={favoriteIds.has(movie.imdbID)}
-                        className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
-                      >
-                        <Heart
-                          className={`w-5 h-5 ${
+                        <button
+                          type="button"
+                          onClick={() => toggleFavorite(movie)}
+                          aria-label={
                             favoriteIds.has(movie.imdbID)
-                              ? "fill-secondary text-secondary"
-                              : "text-white"
-                          }`}
-                          aria-hidden="true"
-                        />
-                      </button>
-                    </div>
+                              ? `Remove ${movie.Title} from favorites`
+                              : `Add ${movie.Title} to favorites`
+                          }
+                          aria-pressed={favoriteIds.has(movie.imdbID)}
+                          className="absolute top-2 right-2 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+                        >
+                          <Heart
+                            className={`w-5 h-5 ${
+                              favoriteIds.has(movie.imdbID)
+                                ? "fill-secondary text-secondary"
+                                : "text-white"
+                            }`}
+                            aria-hidden="true"
+                          />
+                        </button>
+                      </div>
 
-                    <div className="p-4">
-                      <button
-                        onClick={() => setSelectedMovieId(movie.imdbID)}
-                        className="text-left w-full hover:text-primary transition-colors"
-                      >
-                        <h3 className="font-semibold text-sm line-clamp-2 mb-1">
-                          {movie.Title}
-                        </h3>
-                        <p className="text-xs text-foreground/60">
-                          {movie.Year}
-                        </p>
-                      </button>
-                    </div>
-                  </Card>
-                ))}
+                      <div className="p-4">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMovieId(movie.imdbID)}
+                          className="text-left w-full hover:text-primary transition-colors"
+                        >
+                          <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+                            {movie.Title}
+                          </h3>
+                          <p className="text-xs text-foreground/60">
+                            {movie.Year}
+                          </p>
+                        </button>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {hasMoreResults && (
+                  <div className="flex justify-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setVisibleResultsCount(c => c + 8)}
+                      className="border-white/10 hover:bg-white/5"
+                    >
+                      Show more results
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -610,6 +644,11 @@ export default function Home() {
                         <img
                           src={movie.Poster}
                           alt={movie.Title}
+                          loading="lazy"
+                          decoding="async"
+                          width={300}
+                          height={450}
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
@@ -619,6 +658,7 @@ export default function Home() {
                       )}
 
                       <button
+                        type="button"
                         onClick={() => toggleFavorite(movie)}
                         aria-label={`Remove ${movie.Title} from favorites`}
                         aria-pressed="true"
@@ -683,6 +723,11 @@ export default function Home() {
                     <img
                       src={movieDetails.Poster}
                       alt={movieDetails.Title}
+                      loading="lazy"
+                      decoding="async"
+                      width={300}
+                      height={450}
+                      sizes="(max-width: 768px) 100vw, 300px"
                       className="w-full rounded-lg"
                     />
                   ) : (
