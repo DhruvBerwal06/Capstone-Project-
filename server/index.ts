@@ -176,24 +176,16 @@ Rules:
     : new Error("Gemini API failed for all configured models");
 }
 
+// NOTE: This file is only for local development
+// For production on Vercel, use /api/index.ts instead
+
 async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Determine the public directory path
-  // For bundled deployments (dist/index.js), __dirname is the dist folder
-  // The vite build outputs to dist/public, so we look for public/ relative to __dirname
-  const staticPath =
-    process.env.NODE_ENV === "production"
-      ? path.resolve(__dirname, "public")
-      : path.resolve(__dirname, "..", "dist", "public");
+  const staticPath = path.resolve(__dirname, "..", "dist", "public");
 
   app.use(express.json());
-
-  // In production, serve static files and fallback to index.html for SPA routing
-  if (process.env.NODE_ENV === "production") {
-    app.use(express.static(staticPath));
-  }
 
   app.post("/api/ai/movie-finder", async (req, res) => {
     const description =
@@ -217,7 +209,6 @@ async function startServer() {
       const suggestion = await interpretMovieRequest(description);
       res.json(suggestion);
     } catch (error) {
-      // Log server-side for debugging, but never leak internals to the client.
       console.error("AI movie-finder error:", error);
       res.status(503).json({
         error: "AI suggestion is temporarily unavailable",
@@ -225,12 +216,11 @@ async function startServer() {
     }
   });
 
-  // Fallback to index.html for client-side routing in production
-  if (process.env.NODE_ENV === "production") {
-    app.get("*", (_req, res) => {
-      res.sendFile(path.join(staticPath, "index.html"));
-    });
-  }
+  // Serve static files and fallback to index.html for SPA routing
+  app.use(express.static(staticPath));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(staticPath, "index.html"));
+  });
 
   const port = process.env.PORT || 5000;
 

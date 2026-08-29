@@ -1,10 +1,3 @@
-import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const GEMINI_MODELS = [
   "gemini-2.0-flash",
   "gemini-2.5-flash",
@@ -153,37 +146,45 @@ async function interpretMovieRequest(
     : new Error("Gemini API failed for all configured models");
 }
 
-const app = express();
+export default async (req: any, res: any) => {
+  res.setHeader("Content-Type", "application/json");
 
-app.use(express.json());
+  if (req.method !== "POST") {
+    res.statusCode = 405;
+    res.end(JSON.stringify({ error: "Method not allowed" }));
+    return;
+  }
 
-app.post("/api/ai/movie-finder", async (req, res) => {
   const description =
     typeof req.body?.description === "string"
-      ? req.body.description.trim()
+      ? (req.body.description as string).trim()
       : "";
 
   if (!description) {
-    res.status(400).json({ error: "description is required" });
+    res.statusCode = 400;
+    res.end(JSON.stringify({ error: "description is required" }));
     return;
   }
 
   if (description.length > 500) {
-    res
-      .status(400)
-      .json({ error: "description is too long (max 500 characters)" });
+    res.statusCode = 400;
+    res.end(
+      JSON.stringify({ error: "description is too long (max 500 characters)" })
+    );
     return;
   }
 
   try {
     const suggestion = await interpretMovieRequest(description);
-    res.json(suggestion);
+    res.statusCode = 200;
+    res.end(JSON.stringify(suggestion));
   } catch (error) {
     console.error("AI movie-finder error:", error);
-    res.status(503).json({
-      error: "AI suggestion is temporarily unavailable",
-    });
+    res.statusCode = 503;
+    res.end(
+      JSON.stringify({
+        error: "AI suggestion is temporarily unavailable",
+      })
+    );
   }
-});
-
-export default app;
+};

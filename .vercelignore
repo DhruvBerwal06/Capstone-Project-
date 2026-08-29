@@ -1,0 +1,10 @@
+server
+node_modules
+.git
+.env.local
+.env.*.local
+*.md
+docs
+.vscode
+client/src
+client/public

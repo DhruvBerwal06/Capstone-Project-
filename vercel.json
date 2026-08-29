@@ -1,6 +1,8 @@
 {
   "buildCommand": "npm run build",
   "installCommand": "npm install",
-  "version": 2,
-  "public": "dist/public"
+  "public": "dist/public",
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
