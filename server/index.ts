@@ -31,7 +31,8 @@ function extractGeminiText(payload: unknown): string | null {
     const candidateObj = candidate as Record<string, unknown> | null;
     if (!candidateObj) continue;
 
-    const directText = typeof candidateObj.text === "string" ? candidateObj.text : "";
+    const directText =
+      typeof candidateObj.text === "string" ? candidateObj.text : "";
     if (directText.trim()) return directText;
 
     const content = candidateObj.content as Record<string, unknown> | undefined;
@@ -114,7 +115,9 @@ Rules:
 
       if (!response.ok) {
         const text = await response.text().catch(() => "");
-        lastError = new Error(`Gemini API error for ${model}: ${response.status}: ${text}`);
+        lastError = new Error(
+          `Gemini API error for ${model}: ${response.status}: ${text}`
+        );
         continue;
       }
 
@@ -122,7 +125,9 @@ Rules:
       const text = extractGeminiText(data);
 
       if (!text) {
-        lastError = new Error(`Gemini API returned no text content for ${model}`);
+        lastError = new Error(
+          `Gemini API returned no text content for ${model}`
+        );
         continue;
       }
 
@@ -131,7 +136,9 @@ Rules:
       try {
         parsed = JSON.parse(text);
       } catch {
-        lastError = new Error(`Gemini API returned non-JSON content for ${model}`);
+        lastError = new Error(
+          `Gemini API returned non-JSON content for ${model}`
+        );
         continue;
       }
 
@@ -141,7 +148,9 @@ Rules:
         typeof candidate.searchTerm !== "string" ||
         !Array.isArray(candidate.genreHints)
       ) {
-        lastError = new Error(`Gemini API returned an unexpected shape for ${model}`);
+        lastError = new Error(
+          `Gemini API returned an unexpected shape for ${model}`
+        );
         continue;
       }
 
@@ -171,7 +180,20 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Determine the public directory path
+  // For bundled deployments (dist/index.js), __dirname is the dist folder
+  // The vite build outputs to dist/public, so we look for public/ relative to __dirname
+  const staticPath =
+    process.env.NODE_ENV === "production"
+      ? path.resolve(__dirname, "public")
+      : path.resolve(__dirname, "..", "dist", "public");
+
   app.use(express.json());
+
+  // In production, serve static files and fallback to index.html for SPA routing
+  if (process.env.NODE_ENV === "production") {
+    app.use(express.static(staticPath));
+  }
 
   app.post("/api/ai/movie-finder", async (req, res) => {
     const description =
@@ -203,12 +225,8 @@ async function startServer() {
     }
   });
 
-  // Serve the built static client in production.
+  // Fallback to index.html for client-side routing in production
   if (process.env.NODE_ENV === "production") {
-    const staticPath = path.resolve(__dirname, "public");
-
-    app.use(express.static(staticPath));
-
     app.get("*", (_req, res) => {
       res.sendFile(path.join(staticPath, "index.html"));
     });
@@ -222,4 +240,3 @@ async function startServer() {
 }
 
 startServer().catch(console.error);
-

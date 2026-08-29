@@ -1,0 +1,9 @@
+{
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "outputDirectory": ".",
+  "public": "dist/public",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
